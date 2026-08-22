@@ -4,3 +4,6 @@
 # 临时/缓存
 *.tmp
 .cache/
+
+# 大型媒体不纳入 git（保留在 iCloud 同步层，Mac/iPhone 可直接访问）
+*.mp4

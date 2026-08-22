@@ -20,3 +20,6 @@ updated: 2026-08-22
 
 ## [2026-08-22] REMOTE | GitHub 远端打通（SSH）
 git 远端层完成配置。GitHub 账号：Merryfeng123，仓库名：`personal-wiki`（描述：智贤宝库），私有。SSH 密钥：ed25519 专用密钥 `~/.ssh/id_ed25519_wiki`（comment: fengxiaoqing-mac-wiki）已添加至 GitHub SSH keys，标题「冯小青-mac」。远端地址：`git@github.com:Merryfeng123/personal-wiki.git`。4 次本地提交已全部推送至远端，`origin/main` 与 `HEAD` 一致。至此两层存储架构完整落地：iCloud 云盘 = 实时同步层，GitHub = 耐久/可移植层。下一步：首次 ingest（摄入资料）。
+
+## [2026-08-22] INGEST | 首次摄入：龙师闭关感言（佛法经典资料库奠基）
+建立「佛法经典」专属存储库：原始资料复制至 `raw/佛法经典/龙师说法/20240608-龙师闭关感言/`（含 77MB 视频 + 60KB 逐字稿 docx）；视频经 `.gitignore` 排除出 git（git 不存大媒体），逐字稿为唯一可检索文本。生成 3 个 wiki 页：source-summary `wiki/佛法经典/20240608-龙师闭关感言.md`、entity `wiki/人物/龙师.md`、concept `wiki/佛法经典/闭关（实修次第）.md`；更新 `index.md`（新增佛法经典类目）与 `WIKI-SCHEMA.md`（注册佛法经典为指定收藏）。桌面原文件保留未删（遵循个人文件安全规范）。
