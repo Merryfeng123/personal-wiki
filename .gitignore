@@ -6,4 +6,15 @@
 .cache/
 
 # 大型媒体不纳入 git（保留在 iCloud 同步层，Mac/iPhone 可直接访问）
+# 佛法经典等讲座资料以视频为主，git 仅承载逐字稿(docx)等文本
 *.mp4
+*.mov
+*.mkv
+*.avi
+*.webm
+*.flv
+*.wmv
+*.mpg
+*.mpeg
+*.ts
+*.m4v
