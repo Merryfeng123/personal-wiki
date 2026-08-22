@@ -7,7 +7,7 @@ updated: 2026-08-22
 # 操作日志（Log）
 
 > 仅追加的 chronological 记录。grep 用法：`grep "^## \[" log.md | tail -5`
-> 前缀约定：`INIT` 初始化 / `INGEST` 摄入 / `QUERY` 查询 / `LINT` 体检 / `UPDATE` 更新
+> 前缀约定：`INIT` 初始化 / `INGEST` 摄入 / `QUERY` 查询 / `LINT` 体检 / `UPDATE` 更新 / `REMOTE` 远端
 
 ## [2026-08-22] INIT | 创建个人知识库
 基于 Karpathy LLM Wiki 模式，在桌面初始化三层架构：raw/（原始资料）、wiki/（LLM 维护）、WIKI-SCHEMA.md（模式定义）。建立 index.md 与 log.md。等待第一份资料摄入。
@@ -17,3 +17,6 @@ updated: 2026-08-22
 
 ## [2026-08-22] UPDATE | 确立两层架构与手机摄入工作流
 与使用者对齐核心目标：(1) 长期稳定、专属、可累积、可链接到 WorkBuddy 及任意系统；(2) 手机随手捕获资料。据此在 WIKI-SCHEMA.md 固化两层存储架构——iCloud 云盘为实时同步层（手机捕获 + 多设备读取），git 远端（GitHub 等）为耐久与可移植层（备份 + 版本 + 跨系统链接）。新增 `raw/inbox/` 作为手机投递箱，明确定义「手机只捕获、Mac/WorkBuddy 处理」的分工以规避 iCloud+git 冲突。跨系统链接原则：唯一事实来源 = 开放 Markdown + git 远端；IMA 等仅作单向下游消费。待办：git 远端尚未配置（本机无 gh CLI，需使用者提供 GitHub 仓库或授权）。
+
+## [2026-08-22] REMOTE | GitHub 远端打通（SSH）
+git 远端层完成配置。GitHub 账号：Merryfeng123，仓库名：`personal-wiki`（描述：智贤宝库），私有。SSH 密钥：ed25519 专用密钥 `~/.ssh/id_ed25519_wiki`（comment: fengxiaoqing-mac-wiki）已添加至 GitHub SSH keys，标题「冯小青-mac」。远端地址：`git@github.com:Merryfeng123/personal-wiki.git`。4 次本地提交已全部推送至远端，`origin/main` 与 `HEAD` 一致。至此两层存储架构完整落地：iCloud 云盘 = 实时同步层，GitHub = 耐久/可移植层。下一步：首次 ingest（摄入资料）。
