@@ -1,0 +1,1161 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>智慧物流全流程模拟 · 阳光电源合肥总部园区 · YMS POC</title>
+<style>
+  :root{
+    --navy:#142642; --navy2:#1E3559; --navy3:#24406B; --navy4:#0E1C33; --navy5:#0A1526;
+    --red:#E2231A; --teal:#1AA085; --teal2:#22C4A4; --gold:#E8A33D; --violet:#7B6BD6;
+    --ice:#CFE0F2; --mute:#8AA0BE; --line:#2A3F63; --white:#F4F8FF;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{font-family:"Microsoft YaHei","PingFang SC","Hiragino Sans GB","Segoe UI",sans-serif;
+    background:radial-gradient(1200px 760px at 74% -14%, #1b3358 0%, var(--navy) 46%, var(--navy5) 100%);
+    color:var(--white);height:100vh;display:flex;flex-direction:column;overflow:hidden}
+  .num{font-family:"Arial Narrow",Arial,sans-serif}
+
+  header{display:flex;align-items:center;gap:16px;padding:10px 22px;border-bottom:1px solid var(--line);
+    background:linear-gradient(180deg,rgba(30,53,89,.6),rgba(20,38,66,0));flex:none}
+  .brand{display:flex;align-items:center;gap:8px;font-weight:800;font-size:14px}
+  .brand .lz{background:var(--red);color:#fff;padding:3px 9px;border-radius:5px}
+  .brand .x{color:var(--mute)} .brand .sg{color:var(--ice)}
+  .brand .ym{background:var(--navy3);border:1px solid var(--teal);color:var(--teal2);padding:2px 8px;border-radius:5px;font-size:11.5px}
+  .htitle h1{font-size:16.5px;font-weight:800;line-height:1.2}
+  .htitle p{font-size:9.5px;color:var(--teal);font-weight:700;letter-spacing:1.5px;margin-top:2px}
+  .views{margin-left:auto;display:flex;gap:6px;background:var(--navy4);padding:4px;border-radius:10px;border:1px solid var(--line)}
+  .views button{background:none;border:none;color:var(--mute);font:inherit;font-size:12.5px;font-weight:700;
+    padding:7px 15px;border-radius:7px;cursor:pointer;transition:all .2s}
+  .views button.on{background:var(--red);color:#fff}
+  .clock{font-size:11px;color:var(--mute);font-weight:700;text-align:right;line-height:1.4}
+  .clock b{display:block;font-size:20px;color:#fff;font-family:"Arial Narrow",Arial,sans-serif}
+
+  .kpis{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;padding:11px 22px 0;flex:none}
+  .kpi{background:linear-gradient(180deg,rgba(30,53,89,.5),rgba(20,38,66,.3));border:1px solid var(--line);
+    border-radius:11px;padding:8px 12px}
+  .kpi .k{font-size:9.5px;color:var(--mute);font-weight:700}
+  .kpi .v{font-size:21px;font-weight:800;color:var(--teal2);line-height:1.2;margin-top:1px}
+  .kpi .v small{font-size:10px;color:var(--mute);margin-left:2px}
+  .kpi.hl .v{color:#fff;font-size:15px;padding-top:4px}
+
+  .stage{flex:1;min-height:0;display:none;padding:11px 22px 4px}
+  .stage.on{display:grid}
+  #vSim{grid-template-columns:1.66fr 1fr;gap:13px}
+  .col{display:flex;flex-direction:column;gap:11px;min-height:0}
+  .card{background:linear-gradient(180deg,rgba(30,53,89,.46),rgba(20,38,66,.3));border:1px solid var(--line);
+    border-radius:13px;padding:11px 13px;display:flex;flex-direction:column;min-height:0}
+  .ch{display:flex;align-items:center;gap:9px;margin-bottom:7px;flex:none}
+  .ch .t{font-size:13px;font-weight:800}
+  .ch .s{font-size:9px;color:var(--teal);font-weight:700;letter-spacing:1.1px}
+  .ch .r{margin-left:auto;font-size:10px;color:var(--mute);font-weight:700}
+
+  .mapbox{position:relative;flex:1;min-height:230px;border-radius:10px;overflow:hidden;background:#0A1524;
+    border:1px solid rgba(42,63,99,.85)}
+  .mapbox svg{position:absolute;inset:0;width:100%;height:100%}
+  .veh{transition:transform 1.5s cubic-bezier(.45,.05,.25,1)}
+  .veh .bd{transition:transform .5s ease;transform-box:fill-box;transform-origin:center}
+  .veh .wheel{transform-box:fill-box;transform-origin:center}
+  body.playing .veh.mv .wheel{animation:spin .6s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .veh .plate{font-size:11px;font-weight:700;text-anchor:middle;paint-order:stroke;
+    stroke:#0A1524;stroke-width:3.4px;stroke-linejoin:round}
+  .veh.off{opacity:0;pointer-events:none}
+  .ring{fill:none;stroke-width:2.4;opacity:0;transform-box:fill-box;transform-origin:center}
+  body.playing .veh.foc .ring{animation:ping 2.2s ease-out infinite}
+  body.playing .veh.foc .ring.b{animation-delay:1.1s}
+  @keyframes ping{0%{transform:scale(.3);opacity:.85}100%{transform:scale(2.1);opacity:0}}
+  .mdock{transition:fill .55s ease,stroke .55s ease}
+  .legend{display:flex;gap:12px;flex-wrap:wrap;padding-top:7px;flex:none}
+  .lg{display:flex;align-items:center;gap:5px;font-size:9.5px;color:var(--mute)}
+  .lg i{width:9px;height:9px;border-radius:2px;display:block}
+  .toast{position:absolute;left:12px;bottom:12px;max-width:62%;background:rgba(8,18,34,.95);
+    border:1px solid var(--gold);border-left-width:4px;border-radius:9px;padding:8px 12px;z-index:8;
+    opacity:0;transform:translateY(8px);transition:all .4s ease;pointer-events:none}
+  .toast.on{opacity:1;transform:none}
+  .toast .tt{font-size:11px;font-weight:800;color:var(--gold);margin-bottom:2px}
+  .toast .tb{font-size:10.5px;color:var(--ice);line-height:1.5}
+  .toast.ok{border-color:var(--teal)} .toast.ok .tt{color:var(--teal2)}
+  .hint{position:absolute;right:12px;top:10px;font-size:10px;color:var(--mute);background:rgba(8,18,34,.85);
+    padding:4px 10px;border-radius:20px;border:1px solid var(--line);z-index:7}
+
+  .badge{width:34px;height:34px;border-radius:9px;background:var(--red);display:flex;align-items:center;
+    justify-content:center;font-weight:800;font-size:15px;color:#fff;flex:none}
+  .pts{list-style:none;overflow:auto;flex:1}
+  .pts li{display:flex;gap:8px;align-items:flex-start;padding:4px 0;opacity:0;transform:translateY(6px)}
+  .pts li.show{opacity:1;transform:none;transition:all .5s ease}
+  .pts li .pk{width:6px;height:6px;border-radius:2px;background:var(--teal);margin-top:6px;flex:none}
+  .pts li .pt{font-size:12px;line-height:1.5;color:#E7EFFA}
+  .pts li .pt b{color:#fff}
+  .sys{flex:none;margin-top:6px;padding-top:6px;border-top:1px solid var(--line);display:flex;gap:6px;flex-wrap:wrap}
+  .sy{font-size:10px;font-weight:700;color:var(--ice);background:var(--navy4);border:1px solid var(--navy3);
+    padding:3px 8px;border-radius:6px}
+  .sy em{color:var(--teal2);font-style:normal;font-weight:800}
+
+  /* 车辆列表 */
+  .vlist{list-style:none;overflow:auto;flex:1}
+  .vlist li{display:flex;gap:9px;align-items:center;padding:7px 9px;border-radius:9px;margin-bottom:5px;
+    background:rgba(14,28,51,.6);border:1px solid var(--line);transition:all .4s}
+  .vlist li.foc{border-color:var(--red);background:rgba(226,35,26,.1);box-shadow:0 0 0 3px rgba(226,35,26,.08)}
+  .vlist li.gone{opacity:.4}
+  .vlist .sw{width:9px;height:26px;border-radius:3px;flex:none}
+  .vlist .v1{flex:1;min-width:0}
+  .vlist .pl2{font-size:12px;font-weight:800;color:#fff;font-family:"Arial Narrow",Arial,sans-serif;letter-spacing:.3px}
+  .vlist .bz{font-size:9.5px;color:var(--mute);margin-top:1px}
+  .vlist .v2{text-align:right;flex:none}
+  .vlist .sg2{font-size:11px;font-weight:800;color:var(--teal2)}
+  .vlist .tm{font-size:9.5px;color:var(--mute);margin-top:1px}
+
+  /* 任务流 */
+  .tf{list-style:none;overflow:auto;flex:1}
+  .tf li{display:flex;gap:8px;align-items:flex-start;padding:6px 8px;border-radius:8px;margin-bottom:4px;
+    background:rgba(14,28,51,.55);border:1px solid var(--line)}
+  .tf li .sq{width:19px;height:19px;border-radius:5px;flex:none;display:flex;align-items:center;
+    justify-content:center;font-size:10px;font-weight:800;background:var(--navy3);color:var(--mute)}
+  .tf li .n1{font-size:11.5px;font-weight:800;color:var(--ice);line-height:1.3}
+  .tf li .n2{font-size:9.5px;color:var(--mute);margin-top:1px}
+  .tf li .st{font-size:9.5px;font-weight:800;color:var(--mute);margin-left:auto;flex:none}
+  .tf li.done{border-color:rgba(26,160,133,.5);background:rgba(26,160,133,.08)}
+  .tf li.done .sq{background:var(--teal);color:#fff} .tf li.done .st{color:var(--teal2)}
+  .tf li.act{border-color:var(--red);background:rgba(226,35,26,.1)}
+  .tf li.act .sq{background:var(--red);color:#fff} .tf li.act .st{color:#ff8b84} .tf li.act .n1{color:#fff}
+
+  /* ============ 月台看板 ============ */
+  #vDock{grid-template-columns:1fr;overflow:auto}
+  .dsum{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin-bottom:11px;flex:none}
+  .ds{background:rgba(14,28,51,.6);border:1px solid var(--line);border-radius:10px;padding:8px 11px}
+  .ds .k{font-size:9.5px;color:var(--mute);font-weight:700}
+  .ds .v{font-size:20px;font-weight:800;line-height:1.25;margin-top:1px}
+  .dgrid2{display:grid;grid-template-columns:repeat(2,1fr);gap:11px;flex:1;min-height:0}
+  .dgroup{background:linear-gradient(180deg,rgba(30,53,89,.44),rgba(20,38,66,.28));border:1px solid var(--line);
+    border-radius:12px;padding:10px 12px;display:flex;flex-direction:column;min-height:0}
+  .dgh{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+  .dgh .n{font-size:13px;font-weight:800}
+  .dgh .s{font-size:9.5px;color:var(--mute)}
+  .dgh .u{margin-left:auto;font-size:10px;font-weight:800;color:var(--teal2)}
+  .dcells{display:grid;grid-template-columns:repeat(6,1fr);gap:7px;flex:1}
+  .dc{border:1px solid var(--line);background:var(--navy4);border-radius:8px;padding:7px 6px;position:relative;
+    overflow:hidden;display:flex;flex-direction:column;gap:2px;transition:all .45s}
+  .dc .id{font-size:10.5px;font-weight:800;color:var(--ice)}
+  .dc .st2{font-size:9.5px;font-weight:800;color:var(--mute)}
+  .dc .pl3{font-size:9.5px;color:#fff;font-family:"Arial Narrow",Arial,sans-serif}
+  .dc .bz2{font-size:8.5px;color:var(--mute)}
+  .dc .du{font-size:9px;color:var(--mute);margin-top:auto}
+  .dc .bp{position:absolute;left:0;bottom:0;height:3px;width:0;background:var(--teal);transition:width .9s ease}
+  .dc.busy{border-color:rgba(26,160,133,.55);background:rgba(26,160,133,.09)} .dc.busy .st2{color:var(--teal2)}
+  .dc.lock{border-color:rgba(232,163,61,.6);background:rgba(232,163,61,.09)} .dc.lock .st2{color:var(--gold)}
+  .dc.lock .bp{background:var(--gold)}
+  .dc.over{border-color:rgba(226,35,26,.65);background:rgba(226,35,26,.11)} .dc.over .st2{color:#ff7b73}
+  .dc.over .bp{background:var(--red)}
+  .dc.self{border-color:#fff;background:rgba(226,35,26,.17);box-shadow:0 0 0 2px rgba(255,255,255,.13)}
+  .dc.self .st2{color:#fff} .dc.self .bp{background:#fff}
+  .dc.idle{opacity:.55}
+
+  /* ============ 管理中心看板 ============ */
+  #vCtl{grid-template-columns:1fr;overflow:auto}
+  .cgrid{display:grid;grid-template-columns:1.35fr 1fr 1fr;gap:11px;flex:1;min-height:0}
+  .cwide{grid-column:span 3}
+  .panel{background:linear-gradient(180deg,rgba(30,53,89,.44),rgba(20,38,66,.28));border:1px solid var(--line);
+    border-radius:12px;padding:11px 13px;display:flex;flex-direction:column;min-height:0}
+  .pt2{font-size:12.5px;font-weight:800;margin-bottom:2px}
+  .ps{font-size:9.5px;color:var(--mute);margin-bottom:8px}
+  .chart{flex:1;min-height:0}
+  .chart svg{width:100%;height:100%;display:block}
+  .hb{display:flex;flex-direction:column;gap:9px;flex:1;justify-content:center}
+  .hbr{display:flex;align-items:center;gap:9px}
+  .hbr .nm{font-size:10.5px;font-weight:700;color:var(--ice);width:86px;flex:none}
+  .hbr .tr{flex:1;height:14px;border-radius:7px;background:rgba(255,255,255,.06);overflow:hidden}
+  .hbr .tr i{display:block;height:100%;width:0;border-radius:7px;transition:width 1.1s cubic-bezier(.3,.9,.3,1)}
+  .hbr .vl{font-size:10.5px;font-weight:800;color:#fff;width:44px;text-align:right;flex:none;
+    font-family:"Arial Narrow",Arial,sans-serif}
+  .etab{width:100%;border-collapse:collapse;font-size:10.5px}
+  .etab th{text-align:left;color:var(--mute);font-weight:700;font-size:9.5px;padding:4px 6px;
+    border-bottom:1px solid var(--line)}
+  .etab td{padding:5px 6px;border-bottom:1px dashed rgba(42,63,99,.55);color:#E7EFFA}
+  .etab .lv{font-weight:800;font-size:9.5px;padding:1px 7px;border-radius:10px}
+  .lv.h{background:rgba(226,35,26,.16);color:#ff7b73} .lv.m{background:rgba(232,163,61,.16);color:var(--gold)}
+  .lv.l{background:rgba(26,160,133,.16);color:var(--teal2)}
+  .gates{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;flex:1}
+  .gt{background:rgba(14,28,51,.6);border:1px solid var(--line);border-radius:10px;padding:9px 10px;
+    display:flex;flex-direction:column}
+  .gt .gn{font-size:12px;font-weight:800;color:#fff}
+  .gt .gr{font-size:9px;color:var(--mute);margin-top:1px;margin-bottom:7px}
+  .gt .gv{font-size:23px;font-weight:800;font-family:"Arial Narrow",Arial,sans-serif}
+  .gt .gu{font-size:9px;color:var(--mute)}
+  .gt .gb{margin-top:auto;display:flex;gap:3px;height:22px;align-items:flex-end}
+  .gt .gb i{flex:1;border-radius:2px 2px 0 0;background:var(--navy3);transition:height .9s ease}
+
+  /* ============ 底部 ============ */
+  .tl{display:flex;gap:4px;padding:5px 22px 0;flex:none;overflow-x:auto}
+  .tlx{flex:1;min-width:62px;background:var(--navy4);border:1px solid var(--line);border-radius:6px;
+    padding:5px 3px;text-align:center;cursor:pointer;transition:all .3s}
+  .tlx .tn{font-size:9px;color:var(--line);font-weight:800;font-family:"Arial Narrow",Arial,sans-serif}
+  .tlx .tt2{font-size:9.5px;color:var(--mute);font-weight:800;margin-top:1px;line-height:1.25}
+  .tlx.done{border-color:rgba(26,160,133,.4)} .tlx.done .tt2{color:var(--ice)} .tlx.done .tn{color:var(--teal)}
+  .tlx.act{background:var(--red);border-color:#fff} .tlx.act .tt2{color:#fff} .tlx.act .tn{color:#ffd3d0}
+  .controls{display:flex;align-items:center;gap:10px;padding:9px 22px 11px;flex:none}
+  .btn{background:var(--navy2);border:1px solid var(--navy3);color:var(--white);font:inherit;font-size:12px;
+    font-weight:700;padding:7px 13px;border-radius:8px;cursor:pointer;transition:all .2s}
+  .btn:hover{background:var(--navy3);border-color:var(--teal)}
+  .btn.primary{background:var(--red);border-color:var(--red)} .btn.primary:hover{background:#c31d15}
+  .btn:disabled{opacity:.38;cursor:not-allowed}
+  .bar{flex:1;height:7px;background:var(--navy4);border-radius:5px;position:relative;cursor:pointer;border:1px solid var(--line)}
+  .bar .f{position:absolute;left:0;top:0;bottom:0;border-radius:5px;
+    background:linear-gradient(90deg,var(--teal),var(--teal2));width:0;transition:width .6s}
+  .speed{display:flex;gap:4px;background:var(--navy4);border-radius:8px;padding:3px;border:1px solid var(--line)}
+  .speed button{background:none;border:none;color:var(--mute);font:inherit;font-size:11px;font-weight:700;
+    padding:5px 9px;border-radius:6px;cursor:pointer}
+  .speed button.on{background:var(--teal);color:#fff}
+  .ind{font-size:11px;color:var(--mute);font-weight:700;min-width:62px;text-align:center}
+  .ind b{color:#fff;font-size:13.5px}
+  .note{font-size:9.5px;color:#6E86A6;padding:0 22px 8px;flex:none}
+
+  @media (max-width:1200px){
+    body{overflow:auto;height:auto}
+    #vSim{grid-template-columns:1fr}
+    .kpis{grid-template-columns:repeat(3,1fr)}
+    .cgrid{grid-template-columns:1fr} .cwide{grid-column:span 1}
+    .dgrid2{grid-template-columns:1fr}
+  }
+  @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand"><span class="lz">联想</span><span class="x">×</span><span class="sg">阳光电源</span><span class="ym">YMS 园区物流</span></div>
+  <div class="htitle">
+    <h1>合肥总部园区 · 智慧物流全流程模拟</h1>
+    <p>MULTI-VEHICLE · THREE GATES · MULTI-DOCK TASK FLOW</p>
+  </div>
+  <div class="views" id="views">
+    <button data-v="vSim" class="on">流程模拟</button>
+    <button data-v="vDock">月台看板</button>
+    <button data-v="vCtl">管理中心看板</button>
+  </div>
+  <div class="clock">模拟时刻<b id="clk">08:40</b></div>
+</header>
+
+<div class="kpis">
+  <div class="kpi hl"><div class="k">当前环节</div><div class="v" id="kStage">—</div></div>
+  <div class="kpi"><div class="k">在园货车</div><div class="v num" id="kIn">0<small>台</small></div></div>
+  <div class="kpi"><div class="k">门外排队</div><div class="v num" id="kQ">0<small>台</small></div></div>
+  <div class="kpi"><div class="k">已完成车次</div><div class="v num" id="kDone">0<small>台</small></div></div>
+  <div class="kpi"><div class="k">月台占用率</div><div class="v num" id="kUse">0<small>%</small></div></div>
+  <div class="kpi"><div class="k">平均在园时长</div><div class="v num" id="kStay">0<small>min</small></div></div>
+</div>
+
+<!-- ================= 视图 1：流程模拟 ================= -->
+<div class="stage on" id="vSim">
+  <div class="col">
+    <div class="card" style="flex:1.6">
+      <div class="ch"><div><div class="s">YARD DIGITAL MAP · 基于总部园区平面图简化绘制</div>
+        <div class="t">园区数字地图 · 多车实时位置与导航</div></div>
+        <div class="r">东门 / 西门 / 北1门 三个货运门岗 ｜ 3 台地磅 ｜ 4 个月台组</div></div>
+      <div class="mapbox" id="mapbox">
+        <div class="hint" id="hint">▶ 自动演示中 · 可用底部按钮单步查看</div>
+        <svg id="map" viewBox="0 0 1280 740" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">
+          <g id="layer"></g><g id="vlayer"></g>
+        </svg>
+        <div class="toast" id="toast"><div class="tt" id="toastT"></div><div class="tb" id="toastB"></div></div>
+      </div>
+      <div class="legend">
+        <div class="lg"><i style="background:#F4F8FF"></i>送货车（原材料收货）</div>
+        <div class="lg"><i style="background:#22C4A4"></i>提货车（成品发运）</div>
+        <div class="lg"><i style="background:#E8A33D"></i>危废清运车</div>
+        <div class="lg"><i style="background:#7B6BD6"></i>堆场空箱回收车</div>
+        <div class="lg"><i style="background:#1AA085"></i>月台作业中</div>
+        <div class="lg"><i style="background:#E2231A"></i>月台超时</div>
+        <div class="lg"><i style="background:#24406B"></i>月台空闲</div>
+      </div>
+    </div>
+    <div class="card" style="flex:.86">
+      <div class="ch"><div class="badge num" id="stNo">1</div>
+        <div><div class="s" id="stEn">STEP</div><div class="t" id="stName">—</div></div>
+        <div class="r" id="stZone">—</div></div>
+      <ul class="pts" id="pts"></ul>
+      <div class="sys" id="sys"></div>
+    </div>
+  </div>
+  <div class="col">
+    <div class="card" style="flex:.92">
+      <div class="ch"><div><div class="s">VEHICLES ON SITE</div><div class="t">在园与待入车辆</div></div>
+        <div class="r" id="vMeta">—</div></div>
+      <ul class="vlist" id="vlist"></ul>
+    </div>
+    <div class="card" style="flex:1.08">
+      <div class="ch"><div><div class="s">TASK FLOW · 焦点车辆任务流</div><div class="t" id="tfTitle">任务流</div></div>
+        <div class="r" id="tfMeta">—</div></div>
+      <ul class="tf" id="tf"></ul>
+    </div>
+  </div>
+</div>
+
+<!-- ================= 视图 2：月台看板 ================= -->
+<div class="stage" id="vDock">
+  <div class="col" style="min-height:0">
+    <div class="dsum" id="dsum"></div>
+    <div class="dgrid2" id="dgrid"></div>
+  </div>
+</div>
+
+<!-- ================= 视图 3：管理中心看板 ================= -->
+<div class="stage" id="vCtl">
+  <div class="col" style="min-height:0">
+    <div class="cgrid">
+      <div class="panel">
+        <div class="pt2">今日时段车流曲线</div>
+        <div class="ps">到场车次 / 出园车次 ｜ 06:00 – 22:00 ｜ 峰值集中在 09–11 时</div>
+        <div class="chart" id="chFlow"></div>
+      </div>
+      <div class="panel">
+        <div class="pt2">三门流量分布</div>
+        <div class="ps">按货运门岗统计今日车次与时段峰值</div>
+        <div class="gates" id="chGates"></div>
+      </div>
+      <div class="panel">
+        <div class="pt2">月台组利用率</div>
+        <div class="ps">占用时长 ÷ 可用时长 ｜ 目标区间 65–85%</div>
+        <div class="hb" id="chDockUse"></div>
+      </div>
+      <div class="panel">
+        <div class="pt2">环节平均时长构成</div>
+        <div class="ps">当日全场均值分解 ｜ 试点前基线 123 min → 当前 78 min（↓37%）</div>
+        <div class="chart" id="chSeg"></div>
+      </div>
+      <div class="panel">
+        <div class="pt2">承运商预约准时率</div>
+        <div class="ps">近 7 日 ｜ 示例名称已脱敏</div>
+        <div class="hb" id="chCarrier"></div>
+      </div>
+      <div class="panel">
+        <div class="pt2">异常事件与处置</div>
+        <div class="ps">系统自动识别并分级推送调度中心</div>
+        <div style="overflow:auto;flex:1"><table class="etab" id="chEvt"></table></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="tl" id="tl"></div>
+<div class="controls">
+  <button class="btn primary" id="play">⏸ 暂停</button>
+  <button class="btn" id="prev">◀ 上一步</button>
+  <button class="btn" id="next">下一步 ▶</button>
+  <button class="btn" id="restart">↺ 重播</button>
+  <div class="ind">步骤 <b id="indNow">1</b> / <span id="indAll">14</span></div>
+  <div class="bar" id="bar"><div class="f" id="barF"></div></div>
+  <div class="speed">
+    <button data-s="8200">很慢 0.6×</button>
+    <button data-s="5400" class="on">慢速 1×</button>
+    <button data-s="3400">较快 1.6×</button>
+  </div>
+</div>
+<div class="note">说明：地图基于《阳光产业园园区地图》简化绘制，用于流程演示；车牌、单号、承运商名称均为脱敏示例；门岗与业务的对应关系、地磅点位、月台归属待调研确认后调整。</div>
+
+<script>
+(function(){
+"use strict";
+var reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion:reduce)").matches;
+var NS = "http://www.w3.org/2000/svg";
+function el(t,a,x){var e=document.createElementNS(NS,t);for(var k in a){e.setAttribute(k,a[k]);}if(x!==undefined)e.textContent=x;return e;}
+function $(id){return document.getElementById(id);}
+
+/* =====================================================================
+   一、园区地图建模（viewBox 1280 x 740，参照总部园区平面图拓扑）
+   ===================================================================== */
+var LANE = 346;      // 昌蒲路中心线（东门—西门主货运通道）
+var APR1 = 250;      // 南2路装卸作业面中心（服务 A/B 月台组与堆场）
+var APR2 = 472;      // 北1路装卸作业面中心（服务 C/D 月台组与危废区）
+var SPINE = 574;     // 精益大道中心线（南北主通道）
+
+var ROADS = [
+  // 园外公共道路
+  {x:110,y:40,w:36,h:660,n:"量子大道",pub:1,vt:1},
+  {x:146,y:40,w:1010,h:34,n:"铭传路",pub:1},
+  {x:1150,y:40,w:36,h:660,n:"长宁大道",pub:1,vt:1},
+  {x:110,y:666,w:1076,h:34,n:"明珠大道",pub:1},
+  // 园内主通道
+  {x:146,y:328,w:1010,h:36,n:"昌蒲路",main:1},
+  {x:556,y:74,w:36,h:592,n:"精益大道",main:1,vt:1},
+  // 装卸作业面
+  {x:158,y:230,w:984,h:40,n:"南2路 · 装卸作业面"},
+  {x:158,y:452,w:984,h:40,n:"北1路 · 装卸作业面"},
+  // 连接道
+  {x:296,y:230,w:26,h:134,n:""},
+  {x:864,y:230,w:26,h:134,n:""},
+  {x:982,y:364,w:26,h:128,n:""}
+];
+
+var BLD = [
+  // 上区（铭传路 ~ 昌蒲路）
+  {x:170,y:88,w:262,h:42,n:"P6 停车场",t:"park"},
+  {x:620,y:88,w:170,h:42,n:"M20 三食堂",t:"aux"},
+  {x:160,y:148,w:130,h:80,n:"阳光电动力",t:"plant"},
+  {x:326,y:148,w:214,h:80,n:"M17",t:"plant",sub:"原材料收货仓"},
+  {x:620,y:148,w:118,h:80,n:"M18",t:"plant"},
+  {x:750,y:148,w:110,h:80,n:"M19",t:"plant"},
+  {x:890,y:148,w:174,h:80,n:"M15",t:"plant",sub:"电芯 / 组件收货"},
+  {x:1074,y:148,w:66,h:24,n:"安全测评室",t:"aux"},
+  {x:1074,y:176,w:66,h:24,n:"电芯拆解室",t:"aux"},
+  {x:1074,y:204,w:66,h:24,n:"无价值工厂",t:"aux"},
+  {x:160,y:276,w:130,h:46,n:"MF5–MF8",t:"aux"},
+  {x:326,y:276,w:214,h:46,n:"堆场",t:"yard",sub:"集装箱 / 空箱"},
+  {x:620,y:276,w:340,h:46,n:"M13",t:"plant"},
+  {x:1000,y:276,w:140,h:46,n:"P4 / P5 停车场",t:"park"},
+  // 下区（昌蒲路 ~ 明珠大道）
+  {x:160,y:374,w:130,h:34,n:"110KV 变电站",t:"aux"},
+  {x:160,y:414,w:96,h:34,n:"回收站",t:"aux"},
+  {x:262,y:414,w:92,h:34,n:"危废品仓",t:"haz",sub:"H-01 地面作业点"},
+  {x:370,y:374,w:84,h:74,n:"M11",t:"plant"},
+  {x:462,y:374,w:78,h:74,n:"M10",t:"plant"},
+  {x:620,y:374,w:160,h:74,n:"M9",t:"plant",sub:"成品发运仓"},
+  {x:792,y:374,w:188,h:74,n:"M8",t:"plant",sub:"成品发运仓"},
+  {x:160,y:496,w:160,h:70,n:"M4",t:"plant"},
+  {x:332,y:496,w:208,h:70,n:"M5",t:"plant"},
+  {x:620,y:496,w:160,h:70,n:"M6",t:"plant"},
+  {x:792,y:496,w:168,h:70,n:"M7",t:"plant"},
+  {x:1000,y:496,w:140,h:70,n:"P1 / P2 地下停车场",t:"park"},
+  {x:160,y:576,w:160,h:74,n:"M3",t:"plant"},
+  {x:332,y:576,w:208,h:74,n:"M2 在建",t:"cons"},
+  {x:620,y:576,w:180,h:74,n:"M1 在建",t:"cons"},
+  {x:812,y:566,w:188,h:84,n:"MF1–MF4",t:"aux"}
+];
+
+// 月台组：docks 沿建筑边布置；side = 'S'(下沿) / 'N'(上沿)
+var DGROUPS = [
+  {k:"A",name:"A 月台组",host:"M17",sub:"原材料收货 · 6 个卸货位",x:330,y:228,n:6,gap:34,dw:26,side:"S",ty:APR1},
+  {k:"B",name:"B 月台组",host:"M15",sub:"电芯 / 组件收货 · 6 个卸货位",x:896,y:228,n:6,gap:27,dw:22,side:"S",ty:APR1},
+  {k:"C",name:"C 月台组",host:"M9",sub:"成品发运 · 6 个装货位",x:628,y:448,n:6,gap:24,dw:20,side:"S",ty:APR2},
+  {k:"D",name:"D 月台组",host:"M8",sub:"成品发运 · 6 个装货位",x:800,y:448,n:6,gap:29,dw:24,side:"S",ty:APR2}
+];
+function dockCX(g,i){ return g.x + i*g.gap + g.dw/2; }
+
+var GATES = [
+  {x:150,y:LANE,n:"东门",r:"原材料收货 · 主入口",freight:1,lab:"L"},
+  {x:1146,y:LANE,n:"西门",r:"成品发运 · 主出口",freight:1,lab:"R"},
+  {x:SPINE,y:662,n:"北1门",r:"危废 / 固废 · 特种车",freight:1,lab:"B"},
+  {x:900,y:662,n:"北2门",r:"员工 / 访客（货车不通行）",freight:0,lab:"B"},
+  {x:330,y:57,n:"南1门",r:"办公 / 员工",freight:0,lab:"T"},
+  {x:700,y:57,n:"南2门",r:"办公 / 员工",freight:0,lab:"T"}
+];
+
+var WB = [
+  {x:196,y:334,w:80,h:24,n:"地磅 1",r:"东门内",sx:236,sy:LANE},
+  {x:1040,y:334,w:80,h:24,n:"地磅 2",r:"西门内",sx:1080,sy:LANE},
+  {x:368,y:460,w:78,h:24,n:"地磅 3",r:"危废 / 固废",sx:407,sy:APR2}
+];
+
+var WAIT = [
+  {x:10,y:298,w:92,h:98,n:"东门蓄车场",r:"园外等候区"},
+  {x:1196,y:298,w:76,h:98,n:"西门蓄车场",r:"园外"},
+  {x:600,y:702,w:220,h:32,n:"北门蓄车场（园外）",r:""}
+];
+
+/* =====================================================================
+   二、车辆与任务流（车牌 / 单号 / 承运商均为脱敏示例）
+   ===================================================================== */
+var W="wait", D="done", A="act";
+var VEH = [
+  { plate:"皖A·**8 01", color:"#F4F8FF", txt:"#142642", biz:"供应商送货 · 原材料收货",
+    order:"预约单 YS-2606**-0186 ｜ 承运商甲", gate:"东门", enterIdx:3,
+    tasks:[
+      {c:"T1",n:"地磅 1 · 进场过磅（重车）",d:"业务：原材料收货 ｜ 凭证：磅重单"},
+      {c:"T2",n:"A-03 月台 · 原材料卸货",d:"关联到货单 DN-2606**-018 ｜ 128 件"},
+      {c:"T3",n:"B-02 月台 · 电芯卸货",d:"关联到货单 DN-2606**-021 ｜ 36 箱"},
+      {c:"T4",n:"地磅 1 · 离场过磅（空车）",d:"净重校验：卸货量与到货单比对"},
+      {c:"T5",n:"东门岗 · 出门单审查与出园",d:"电子出门单 ｜ 三项条件核验"}
+    ],
+    stages:[
+      {n:"在线预约",p:[52,232],path:[[52,232]]},
+      {n:"到场签到",p:[56,300],path:[[56,300]]},
+      {n:"东门排队",p:[56,356],path:[[56,356]]},
+      {n:"东门入园",p:[172,LANE],path:[[95,330],[172,LANE]]},
+      {n:"地磅1 进场过磅",p:[236,LANE],path:[[236,LANE]]},
+      {n:"A-03 卸货",p:[398,APR1],path:[[309,LANE],[309,APR1],[398,APR1]]},
+      {n:"转月台 · 二次排队",p:[700,APR1],path:[[700,APR1]]},
+      {n:"B-02 卸货",p:[934,APR1],path:[[934,APR1]]},
+      {n:"地磅1 离场过磅",p:[236,LANE],path:[[877,APR1],[877,LANE],[300,LANE],[236,LANE]]},
+      {n:"出门单审查",p:[176,LANE],path:[[176,LANE]]},
+      {n:"东门出园",p:[-70,LANE],path:[[-70,LANE]]}
+    ],
+    task:[[W,W,W,W,W],[W,W,W,W,W],[W,W,W,W,W],[W,W,W,W,W],[A,W,W,W,W],[D,A,W,W,W],
+          [D,D,A,W,W],[D,D,A,W,W],[D,D,D,A,W],[D,D,D,D,A],[D,D,D,D,D]] },
+
+  { plate:"皖A·**2 59", color:"#22C4A4", txt:"#06342C", biz:"客户提货 · 成品发运",
+    order:"预约单 YS-2606**-0203 ｜ 承运商乙", gate:"西门", enterIdx:3,
+    tasks:[
+      {c:"T1",n:"C-05 月台 · 逆变器装货",d:"提货单 DO-2606**-033 ｜ 8 托"},
+      {c:"T2",n:"D-02 月台 · 配件装货",d:"提货单 DO-2606**-034 ｜ 5 托 · 跨库转场"},
+      {c:"T3",n:"地磅 2 · 离场过磅（重车）",d:"总装载量与两张提货单合并校验"},
+      {c:"T4",n:"西门岗 · 装车核准",d:"装车照片 / 提货单上传同步 TMS"},
+      {c:"T5",n:"西门岗 · 出门单审查与出园",d:"两单合并开具一张电子出门单"}
+    ],
+    stages:[
+      {n:"在线预约",p:[1232,236],path:[[1232,236]]},
+      {n:"到场签到",p:[1234,320],path:[[1234,320]]},
+      {n:"西门排队",p:[1234,372],path:[[1234,372]]},
+      {n:"西门入园",p:[1126,LANE],path:[[1200,332],[1126,LANE]]},
+      {n:"C-05 装货",p:[736,APR2],path:[[995,LANE],[995,APR2],[736,APR2]]},
+      {n:"转月台 · 跨库转场",p:[786,APR2],path:[[786,APR2]]},
+      {n:"D-02 装货",p:[843,APR2],path:[[843,APR2]]},
+      {n:"地磅2 离场过磅",p:[1080,LANE],path:[[995,APR2],[995,LANE],[1080,LANE]]},
+      {n:"出门单审查",p:[1122,LANE],path:[[1122,LANE]]},
+      {n:"西门出园",p:[1350,LANE],path:[[1350,LANE]]}
+    ],
+    task:[[W,W,W,W,W],[W,W,W,W,W],[W,W,W,W,W],[W,W,W,W,W],[A,W,W,W,W],[D,A,W,W,W],
+          [D,A,W,W,W],[D,D,A,W,W],[D,D,D,A,A],[D,D,D,D,D]] },
+
+  { plate:"皖A·**4 37", color:"#E8A33D", txt:"#3A2405", biz:"危废清运 · 无月台地面作业",
+    order:"预约单 YS-2606**-0244 ｜ 承运商丙（危运资质已核验）", gate:"北1门", enterIdx:2,
+    tasks:[
+      {c:"T1",n:"北1门 · 资质与押运核验",d:"危运资质 / 押运员 / 罐检有效期联动 EHS"},
+      {c:"T2",n:"地磅 3 · 空车过磅",d:"静电接地与随车器材检查同步留痕"},
+      {c:"T3",n:"H-01 作业点 · 危废装车",d:"无月台地面作业 ｜ EHS 旁站确认"},
+      {c:"T4",n:"地磅 3 · 重车过磅",d:"净重与危废申报量比对"},
+      {c:"T5",n:"北1门 · 出门单审查与出园",d:"危废转移单 + 磅差 + 旁站记录三项齐备"}
+    ],
+    stages:[
+      {n:"预约与资质核验",p:[660,692],path:[[660,692]]},
+      {n:"到场签到",p:[700,716],path:[[700,716]]},
+      {n:"绿色通道入园",p:[SPINE,640],path:[[SPINE,700],[SPINE,640]]},
+      {n:"地磅3 空车过磅",p:[407,APR2],path:[[SPINE,APR2],[407,APR2]]},
+      {n:"H-01 危废装车",p:[308,APR2],path:[[308,APR2]]},
+      {n:"地磅3 重车过磅",p:[407,APR2],path:[[407,APR2]]},
+      {n:"出门单审查",p:[SPINE,640],path:[[SPINE,APR2],[SPINE,640]]},
+      {n:"北1门出园",p:[660,762],path:[[660,700],[660,762]]}
+    ],
+    task:[[W,W,W,W,W],[A,W,W,W,W],[D,W,W,W,W],[D,A,W,W,W],[D,D,A,W,W],[D,D,D,A,W],
+          [D,D,D,D,A],[D,D,D,D,D]] },
+
+  { plate:"皖A·**0 16", color:"#7B6BD6", txt:"#FFFFFF", biz:"堆场空箱回收 · 倒短驳运",
+    order:"预约单 YS-2606**-0258 ｜ 承运商丁", gate:"东门", enterIdx:3,
+    tasks:[
+      {c:"T1",n:"堆场 Y-01 · 空箱装车",d:"回收任务 RC-2606**-07 ｜ 4 只空箱"},
+      {c:"T2",n:"地磅 1 · 离场过磅",d:"回收物重量登记"},
+      {c:"T3",n:"东门岗 · 出门单审查与出园",d:"回收出门单 ｜ 逆向任务闭环"}
+    ],
+    stages:[
+      {n:"在线预约",p:[52,196],path:[[52,196]]},
+      {n:"到场签到",p:[56,318],path:[[56,318]]},
+      {n:"东门排队",p:[56,382],path:[[56,382]]},
+      {n:"东门入园",p:[172,LANE],path:[[95,340],[172,LANE]]},
+      {n:"堆场 Y-01 装箱",p:[430,300],path:[[309,LANE],[309,300],[430,300]]},
+      {n:"地磅1 离场过磅",p:[236,LANE],path:[[309,300],[309,LANE],[236,LANE]]},
+      {n:"出门单审查",p:[176,LANE],path:[[176,LANE]]},
+      {n:"东门出园",p:[-70,LANE],path:[[-70,LANE]]}
+    ],
+    task:[[W,W,W],[W,W,W],[W,W,W],[W,W,W],[A,W,W],[D,A,W],[D,D,A],[D,D,D]] }
+];
+
+/* =====================================================================
+   三、全局时间轴（14 步，多车并行）
+   ===================================================================== */
+var TL = [
+ {t:"08:40",f:0,ix:[0,0,0,0],n:"多车在线预约",z:"园区外 · 司机端小程序",
+  pts:[["分门时段配额","东门、西门、北1门三个货运门岗分别设置时段配额，按各门月台产能与外部道路承载独立放号"],
+       ["一单多任务申报","同一预约单内可申报多个月台任务，系统自动拆解为任务流节点，无需分次预约"],
+       ["资质与车型校验","自动校验承运商、车型限高限重、危废运输资质与保险有效期，不合格直接拒约并通知采购"]],
+  sys:["<em>SRM / ERP</em> 到货单关联","<em>YMS</em> 生成预约单 + 任务流"]},
+
+ {t:"08:55",f:0,ix:[1,0,1,1],n:"到场签到 · GPS 电子围栏",z:"园区外 · 500 m 围栏",
+  pts:[["围栏内自助签到","车辆进入门岗 500 m 围栏后司机端可签到，无需下车、无需门岗纸质登记"],
+       ["准时性自动判定","比对签到时间与预约时段，判定早到 / 准时 / 晚点，晚点按策略过号顺延"],
+       ["路线与须知预推","签到成功即推送本车园内专属路线、限速与入园须知，司机端签字确认"]],
+  sys:["<em>YMS</em> 签到策略校验","<em>司机端</em> 推送路线 / 须知"]},
+
+ {t:"09:05",f:0,ix:[2,1,1,2],n:"排队叫号 · 分门虚拟队列",z:"东门蓄车场 · 园外等候",
+  pts:[["每门独立队列","三个货运门岗各自独立虚拟队列，东门繁忙不阻塞西门，整体吞吐优于单一全局队列"],
+       ["月台释放触发叫号","目标月台组释放泊位后系统自动叫号，蓄车场大屏与司机端同步呼叫"],
+       ["队列全程透明","司机可实时看到自己的位次与预计等候时长，减少插队纠纷与门岗争执"]],
+  sys:["<em>LED 大屏</em> 分门队列","<em>司机端</em> 叫号与等候提醒"],
+  ev:["当前排队情况","东门队列 2 台（送货 1 + 空箱回收 1），西门队列 1 台，危废车走北1门绿色通道免排队。","ok"]},
+
+ {t:"09:12",f:2,ix:[2,2,2,2],n:"危废车绿色通道放行（北1门）",z:"北1门 · 危废专用通道",
+  pts:[["免排队直入","危废与生产急料车配置为绿色通道，到场即放行，避免特种车在公共道路滞留"],
+       ["人工双确认留痕","危废场景保留押运人员与安防的人工双确认节点，系统内签字并留存影像"],
+       ["随车检查项清单化","静电接地、灭火器材、应急物资在司机端逐项勾选，缺项无法放行"]],
+  sys:["<em>门禁</em> 危废通道权限","<em>EHS</em> 检查清单留痕"]},
+
+ {t:"09:18",f:0,ix:[3,2,3,2],n:"东门入园放行 · LPR 无感通行",z:"东门 · 车牌识别道闸",
+  pts:[["车牌与预约自动匹配","LPR 识别后与预约单自动匹配，白名单车辆自动抬杆，全程无需人工登记"],
+       ["电子卸货牌发放","系统发放电子卸货牌，手机摄像头信息安全贴标环节保留并留痕"],
+       ["入园即通知仓库","入园动作同步触发仓库备位与叉车班组派工，避免车到人未到"]],
+  sys:["<em>道闸</em> 自动抬杆","<em>WMS</em> 到货预通知"]},
+
+ {t:"09:25",f:0,ix:[4,3,4,3],n:"进场称重 · 无人值守过磅",z:"地磅 1（东门内）",
+  pts:[["三门就近配磅","三个货运门岗各配一台地磅，车辆就近过磅不穿越园区，减少内部动线交叉"],
+       ["上磅自动取数","车辆上磅自动触发称重与车牌复核，无需下车、无需司磅员，异常自动拦截"],
+       ["三单关联留底","磅重单与预约单、到货单三单关联，为后续净重校验与追溯留底"]],
+  sys:["<em>IOT 地磅</em> 取数","<em>YMS</em> 生成磅重单"]},
+
+ {t:"09:34",f:0,ix:[5,4,4,4],n:"园内导航引导 → M17 A-03 卸货",z:"M17 · A 月台组",
+  pts:[["按通行规则导航","依据园区单行、限高、危废专线等规则规划路线，偏航自动预警并语音提示"],
+       ["电子围栏识别到位","车辆进入 A-03 围栏即自动开始作业计时，无需人工报开工"],
+       ["到位即呼叫资源","系统同步呼叫叉车与装卸班组，人机料在车到位时已就绪"]],
+  sys:["<em>RTK 导航</em> 园内引导","<em>WMS</em> 下发收货任务"]},
+
+ {t:"09:48",f:1,ix:[5,4,5,4],n:"四车并行作业 · 全园资源视角",z:"A 组 / C 组 / 危废区 / 堆场",
+  pts:[["多点并行不互扰","四台车分别在 A 月台组、C 月台组、危废地面作业点、堆场同时作业，任务流各自推进"],
+       ["月台看板实时可视","占用车牌、业务类型、已用时长与作业进度实时上屏，调度不再靠对讲机问"],
+       ["超时自动预警改派","占用超阈值即预警并推送调度，可将待入车辆自动改派至同组其他月台"]],
+  sys:["<em>月台看板</em> 实时刷新","<em>YMS</em> 异常事件登记"],
+  ev:["C-01 月台超时占用","占用已达 32 分钟超出阈值，系统已推送调度干预，并将待入车辆自动改派至 C-06。","w"]},
+
+ {t:"09:58",f:0,ix:[6,5,5,5],n:"转月台 · 二次排队（A-03 → B-02）",z:"园内 · 地点间流转",
+  pts:[["任务流自动流转","A-03 完成即自动激活下一节点，车辆无需重新预约、无需二次登记，任务流不断链"],
+       ["转场专用排队规则","园内转场启用独立排队策略，已在园车辆优先于场外车辆，避免进得来、转不动"],
+       ["转场时长单独计时","转场等待与行驶时长单独统计，是识别园内动线瓶颈的关键指标"]],
+  sys:["<em>YMS</em> 任务流引擎流转","<em>WMS</em> 备货 / 备位信号"]},
+
+ {t:"10:08",f:0,ix:[7,6,6,5],n:"M15 B-02 卸货 · 多月台任务完成",z:"M15 · B 月台组",
+  pts:[["预锁定即到即作业","B-02 在叫号阶段已软预锁，本车到位无需重新排队，多月台任务中途不再等待"],
+       ["逐单留痕报量","每段作业单独上传凭证与报量，逐单核准而非整车一次核准"],
+       ["全节点完成才可出园","任务流全部节点完成，才允许进入离场过磅与出门单流程"]],
+  sys:["<em>WMS</em> 收货过账","<em>ERP</em> 收货凭证回写"]},
+
+ {t:"10:20",f:2,ix:[7,6,7,6],n:"危废车出门单审查与出园",z:"北1门 · 出门单核验",
+  pts:[["三项齐备才开单","危废转移单、进出磅差、EHS 旁站记录三项齐备，系统才允许开具出门单"],
+       ["电子出门单扫码核验","司机端一键出示，安防扫码核验，取消纸质单据与人工流转"],
+       ["台账双向回写","危废出入库台账与 EHS 记录同步回写，满足合规追溯要求"]],
+  sys:["<em>出门单</em> 与 EPO 联动","<em>危废台账</em> 回写"]},
+
+ {t:"10:32",f:0,ix:[8,7,-1,7],n:"离场称重与净重校验",z:"地磅 1 / 地磅 2",
+  pts:[["四方数据比对","离场重量与进场重量、卸货数量、装货数量自动比对，超差自动定位到具体单据"],
+       ["超差阻断出园","校验不通过无法生成出门单，道闸不予放行，从源头堵住物资流失风险"],
+       ["两次过磅绑定归档","进出两次磅单与任务流绑定，可按车、按单、按供应商追溯"]],
+  sys:["<em>IOT 地磅</em> 二次称重","<em>YMS</em> 净重校验规则"]},
+
+ {t:"10:42",f:0,ix:[9,8,-1,-1],n:"出门单审查 · 三条件核验",z:"东门 / 西门 · 出门单",
+  pts:[["三项条件同时满足","任务流全部完成 + 净重校验通过 + 装车核准齐备，三项满足才生成出门单"],
+       ["装车情况同步上游","装车照片与提货单同步 TMS 并请求核实，发运数据不再靠人工补录"],
+       ["条件不足道闸不开","不满足条件的车辆无法通过道闸，规则由系统执行而非门岗人情判断"]],
+  sys:["<em>EPO</em> 出门单联动","<em>TMS</em> 装车核实"]},
+
+ {t:"10:50",f:0,ix:[10,9,-1,-1],n:"车辆出园 · 全流程闭环",z:"东门 / 西门 · 道闸放行",
+  pts:[["时间戳全链归档","出园动作触发 11 个时间戳归档，各环节时长自动计算，无需人工填报"],
+       ["指标上送管理中心","KPI 按统一口径上送管理中心看板与 IOC 一张图，支撑配额与资源决策"],
+       ["违规进入闭环治理","超时占用、偏离路线、爽约等行为自动记录并进入黑白名单与整改流程"]],
+  sys:["<em>IOC</em> KPI 上送","<em>YMS</em> 违规闭环治理"],
+  ev:["本轮四车全部完成","平均在园时长 78 分钟，较试点前基线 123 分钟下降约 37%；全程无任务流断链、无纸质出门单。","ok"]}
+];
+
+/* =====================================================================
+   四、月台看板数据（背景车辆用确定性伪随机生成，焦点车辆实时覆盖）
+   ===================================================================== */
+var BGPLATE = ["皖A·**3 12","皖A·**7 05","皖A·**1 88","皖A·**9 41","苏E·**2 60","皖K·**5 33",
+               "皖A·**6 27","浙B·**4 19","皖A·**8 74","皖N·**0 52"];
+var BGBIZ = ["原材料收货","电芯收货","成品发运","包材收货","配件收货","成品发运","辅料收货","成品发运"];
+function h(a,b){ var x = Math.sin(a*127.1 + b*311.7) * 43758.5453; return x - Math.floor(x); }
+
+function dockState(gi, i, step){
+  var r = h(gi*13+i, step+5);
+  if(r < 0.56) return {s:"busy", pl:BGPLATE[(gi*6+i+step)%BGPLATE.length], bz:BGBIZ[(gi*3+i)%BGBIZ.length],
+                        pg:Math.floor(h(i,step)*80)+15, du:Math.floor(h(i+3,step)*38)+6};
+  if(r < 0.64) return {s:"over", pl:BGPLATE[(gi*4+i+step)%BGPLATE.length], bz:BGBIZ[(gi+i)%BGBIZ.length],
+                        pg:92, du:Math.floor(h(i+7,step)*20)+30};
+  if(r < 0.72) return {s:"lock", pl:"—", bz:"已预锁待入", pg:0, du:0};
+  return {s:"idle", pl:"—", bz:"空闲", pg:0, du:0};
+}
+// 焦点车辆占用的月台：{组, 位序, 步骤区间, 车辆}
+var SELF = [
+  {g:0,i:2,from:7,to:8,v:0,pg:[16,74]},        // A-03 · 送货车作业
+  {g:1,i:1,from:3,to:9,v:0,lock:1},            // B-02 · 叫号阶段软预锁
+  {g:1,i:1,from:10,to:11,v:0,pg:[28,86]},      // B-02 · 送货车作业
+  {g:2,i:4,from:7,to:8,v:1,pg:[22,70]},        // C-05 · 提货车作业
+  {g:3,i:1,from:4,to:9,v:1,lock:1},            // D-02 · 软预锁
+  {g:3,i:1,from:10,to:11,v:1,pg:[26,82]},      // D-02 · 提货车作业
+  // 演示用固定异常：C-01 月台超时占用
+  {g:2,i:0,from:6,to:10,st:"over",pl:"皖A·**3 12",bz:"成品发运",pg:94,du:32}
+];
+function dockData(step){
+  var out = [];
+  DGROUPS.forEach(function(g,gi){
+    var arr = [];
+    for(var i=0;i<g.n;i++) arr.push(dockState(gi,i,step));
+    out.push(arr);
+  });
+  SELF.forEach(function(s){
+    if(step+1 < s.from || step+1 > s.to) return;
+    var span = Math.max(1, s.to - s.from);
+    var k = (step+1 - s.from) / span;
+    if(s.st){ out[s.g][s.i] = {s:s.st, pl:s.pl, bz:s.bz, pg:s.pg, du:s.du}; return; }
+    if(s.lock){ out[s.g][s.i] = {s:"lock", pl:VEH[s.v].plate, bz:"本车已预锁", pg:0, du:0}; }
+    else {
+      out[s.g][s.i] = {s:"self", pl:VEH[s.v].plate, bz:VEH[s.v].biz.split(" · ")[1] || VEH[s.v].biz,
+        pg:Math.round(s.pg[0] + (s.pg[1]-s.pg[0])*k), du:Math.round(6 + 26*k)};
+    }
+  });
+  return out;
+}
+
+/* =====================================================================
+   五、运行时
+   ===================================================================== */
+var idx=0, playing=true, timer=null, interval=5400, moveT=[null,null,null,null];
+var vnodes=[], dockNodes={}, view="vSim";
+
+function mins(t){ var p=t.split(":"); return (+p[0])*60 + (+p[1]); }
+
+// 每台车的进场步骤 e 与出场步骤 x（用于在园时长与在园台数统计）
+var VSPAN = VEH.map(function(v,i){
+  var e = TL.length-1, x = TL.length-1, last = v.stages.length-1;
+  for(var q=0;q<TL.length;q++){ if(TL[q].ix[i] >= v.enterIdx){ e=q; break; } }
+  for(var q2=0;q2<TL.length;q2++){ if(TL[q2].ix[i] === last || TL[q2].ix[i] < 0){ x=q2; break; } }
+  return {e:e, x:x};
+});
+
+/* ---------- 地图绘制 ---------- */
+function buildMap(){
+  var g = $("layer"); g.innerHTML=""; dockNodes={};
+  g.appendChild(el("rect",{x:0,y:0,width:1280,height:740,fill:"#0A1524"}));
+  g.appendChild(el("rect",{x:118,y:48,width:1060,height:644,rx:10,fill:"#0D1D33",
+    stroke:"#1D3452","stroke-width":1.5}));
+  // 绿化带
+  [[150,78,1000,10],[150,318,1000,8],[150,650,1000,10]].forEach(function(r){
+    g.appendChild(el("rect",{x:r[0],y:r[1],width:r[2],height:r[3],fill:"#12402E","fill-opacity":.55}));
+  });
+  // 河道（长宁大道侧）
+  g.appendChild(el("path",{d:"M1146 80 C1128 240 1160 420 1140 650",fill:"none",stroke:"#1A4E6B",
+    "stroke-width":7,"stroke-opacity":.75}));
+  // 道路
+  ROADS.forEach(function(r){
+    g.appendChild(el("rect",{x:r.x,y:r.y,width:r.w,height:r.h,rx:3,
+      fill:r.pub?"#101E33":(r.main?"#14263F":"#132340"),stroke:"#203552","stroke-width":1}));
+    if(r.main){
+      if(r.vt) g.appendChild(el("line",{x1:r.x+r.w/2,y1:r.y+8,x2:r.x+r.w/2,y2:r.y+r.h-8,
+        stroke:"#E8A33D","stroke-width":1.8,"stroke-dasharray":"14 12","stroke-opacity":.4}));
+      else g.appendChild(el("line",{x1:r.x+8,y1:r.y+r.h/2,x2:r.x+r.w-8,y2:r.y+r.h/2,
+        stroke:"#E8A33D","stroke-width":1.8,"stroke-dasharray":"14 12","stroke-opacity":.4}));
+    }
+    if(r.n){
+      if(r.vt) g.appendChild(el("text",{x:r.x+r.w/2+3,y:r.y+56,fill:"#4E668A","font-size":10,
+        "font-weight":700,transform:"rotate(90 "+(r.x+r.w/2+3)+" "+(r.y+56)+")"},r.n));
+      else g.appendChild(el("text",{x:r.x+14,y:r.y+r.h/2+4,fill:"#4E668A","font-size":10,"font-weight":700},r.n));
+    }
+  });
+  // 建筑
+  var FILL={plant:"#182E4E",aux:"#16263D",park:"#12233A",yard:"#1B2C3F",haz:"#2C1A20",cons:"#1A2436"};
+  var STK ={plant:"#2A4470",aux:"#22364F",park:"#1E3049",yard:"#2A4460",haz:"#8A2C25",cons:"#26344A"};
+  BLD.forEach(function(b){
+    g.appendChild(el("rect",{x:b.x,y:b.y,width:b.w,height:b.h,rx:5,fill:FILL[b.t],
+      stroke:STK[b.t],"stroke-width":1.3,"stroke-dasharray":b.t==="cons"?"5 4":(b.t==="haz"?"6 4":"none")}));
+    var big = b.h>=60;
+    g.appendChild(el("text",{x:b.x+b.w/2,y:b.y+(big?24:b.h/2+4),fill:b.t==="haz"?"#FF9A92":
+      (b.t==="plant"?"#EAF2FC":"#93A8C4"),"font-size":big?14:9.5,"font-weight":700,
+      "text-anchor":"middle"},b.n));
+    if(b.sub) g.appendChild(el("text",{x:b.x+b.w/2,y:b.y+40,fill:"#7F97B6","font-size":9,
+      "text-anchor":"middle"},b.sub));
+    if(b.t==="yard"){
+      for(var c=0;c<9;c++) g.appendChild(el("rect",{x:b.x+16+(c%5)*38,y:b.y+(c<5?26:35),width:32,height:7,
+        rx:1,fill:"#2E4A69"}));
+    }
+  });
+  // 月台
+  DGROUPS.forEach(function(gr,gi){
+    for(var i=0;i<gr.n;i++){
+      var x = gr.x + i*gr.gap;
+      var r = el("rect",{x:x,y:gr.y,width:gr.dw,height:13,rx:2,fill:"#24406B",stroke:"#2A3F63","stroke-width":1});
+      r.setAttribute("class","mdock"); g.appendChild(r);
+      var t = el("text",{x:x+gr.dw/2,y:gr.y+10,fill:"#CFE0F2","font-size":7.5,"font-weight":700,
+        "text-anchor":"middle"}, gr.k+"-0"+(i+1));
+      g.appendChild(t);
+      dockNodes[gr.k+i]={r:r,t:t};
+    }
+    g.appendChild(el("text",{x:gr.x-4,y:gr.y-4,fill:"#6E86A6","font-size":9,"font-weight":700},gr.name));
+  });
+  // 地磅
+  WB.forEach(function(w){
+    g.appendChild(el("rect",{x:w.x,y:w.y,width:w.w,height:w.h,rx:3,fill:"#16304C",stroke:"#22C4A4",
+      "stroke-width":1.2,"stroke-dasharray":"5 4"}));
+    g.appendChild(el("text",{x:w.x+w.w/2,y:w.y-5,fill:"#22C4A4","font-size":9,"font-weight":700,
+      "text-anchor":"middle"},w.n+" · "+w.r));
+  });
+  // 蓄车场
+  WAIT.forEach(function(v){
+    g.appendChild(el("rect",{x:v.x,y:v.y,width:v.w,height:v.h,rx:5,fill:"#0F1D31",stroke:"#243B58",
+      "stroke-width":1,"stroke-dasharray":"6 4"}));
+    g.appendChild(el("text",{x:v.x+6,y:v.y+15,fill:"#8AA0BE","font-size":9,"font-weight":700},v.n));
+    if(v.r) g.appendChild(el("text",{x:v.x+6,y:v.y+27,fill:"#4E668A","font-size":8},v.r));
+  });
+  // 门岗
+  GATES.forEach(function(t){
+    var col = t.freight? "#E2231A" : "#3E5876";
+    var w=t.lab==="L"||t.lab==="R"?18:34, hh=t.lab==="L"||t.lab==="R"?46:18;
+    g.appendChild(el("rect",{x:t.x-w/2,y:t.y-hh/2,width:w,height:hh,rx:3,fill:"#1E3559",
+      stroke:col,"stroke-width":1.8}));
+    var tx = t.x, ty = t.y, anc="middle";
+    if(t.lab==="L"){ ty = t.y-34; }
+    else if(t.lab==="R"){ ty = t.y-34; }
+    else if(t.lab==="B"){ ty = t.y+30; }
+    else { ty = t.y+32; }
+    g.appendChild(el("text",{x:tx,y:ty,fill:t.freight?"#FF8B84":"#7F97B6","font-size":10.5,
+      "font-weight":700,"text-anchor":anc},t.n));
+    g.appendChild(el("text",{x:tx,y:ty+12,fill:"#5E7799","font-size":8,"text-anchor":anc},t.r));
+  });
+  // 特殊作业点
+  g.appendChild(el("rect",{x:284,y:462,width:48,height:20,rx:3,fill:"#24406B",stroke:"#E8A33D",
+    "stroke-width":1,"stroke-dasharray":"4 3",id:"ptH01"}));
+  g.appendChild(el("text",{x:308,y:476,fill:"#CFE0F2","font-size":8.5,"font-weight":700,
+    "text-anchor":"middle"},"H-01"));
+  g.appendChild(el("rect",{x:406,y:290,width:48,height:20,rx:3,fill:"#24406B",stroke:"#7B6BD6",
+    "stroke-width":1,"stroke-dasharray":"4 3",id:"ptY01"}));
+  g.appendChild(el("text",{x:430,y:304,fill:"#CFE0F2","font-size":8.5,"font-weight":700,
+    "text-anchor":"middle"},"Y-01"));
+  // 指北（原图为南上北下）
+  g.appendChild(el("text",{x:1215,y:110,fill:"#4E668A","font-size":9,"font-weight":700,"text-anchor":"middle"},"S"));
+  g.appendChild(el("text",{x:1215,y:170,fill:"#4E668A","font-size":9,"font-weight":700,"text-anchor":"middle"},"N"));
+  g.appendChild(el("line",{x1:1215,y1:118,x2:1215,y2:158,stroke:"#3A5478","stroke-width":1.4}));
+}
+
+/* ---------- 车辆 ---------- */
+function buildVeh(){
+  var g = $("vlayer"); g.innerHTML=""; vnodes=[];
+  VEH.forEach(function(v,i){
+    var wrap = el("g",{}); wrap.setAttribute("class","veh");
+    var r1 = el("circle",{cx:0,cy:0,r:16,stroke:v.color}); r1.setAttribute("class","ring");
+    var r2 = el("circle",{cx:0,cy:0,r:16,stroke:v.color}); r2.setAttribute("class","ring b");
+    wrap.appendChild(r1); wrap.appendChild(r2);
+    var bd = el("g",{}); bd.setAttribute("class","bd");
+    var inner = el("g",{transform:"translate(-27,-13) scale(0.64)"});
+    [["rect",{x:2,y:10,width:46,height:19,rx:3,fill:v.color}],
+     ["rect",{x:6,y:14,width:38,height:4,rx:2,fill:"#000","fill-opacity":.12}],
+     ["rect",{x:48,y:5,width:24,height:24,rx:3,fill:"#E2231A"}],
+     ["rect",{x:52,y:9,width:14,height:9,rx:2,fill:"#9AD8FF"}],
+     ["rect",{x:2,y:26,width:70,height:5,fill:"#0A1524"}]].forEach(function(s){ inner.appendChild(el(s[0],s[1])); });
+    [18,58].forEach(function(cx){
+      var w = el("circle",{cx:cx,cy:33,r:6,fill:"#22304a",stroke:"#0A1524","stroke-width":2});
+      w.setAttribute("class","wheel"); inner.appendChild(w);
+    });
+    bd.appendChild(inner); wrap.appendChild(bd);
+    var pl = el("text",{x:0,y:24,fill:v.color}); pl.setAttribute("class","plate");
+    pl.textContent = v.plate; wrap.appendChild(pl);
+    g.appendChild(wrap);
+    vnodes.push({wrap:wrap,bd:bd,cur:[v.stages[0].p[0], v.stages[0].p[1]]});
+    wrap.style.transform = "translate("+v.stages[0].p[0]+"px,"+v.stages[0].p[1]+"px)";
+  });
+}
+function moveVeh(i, path, total){
+  clearTimeout(moveT[i]);
+  var nd = vnodes[i], legs = path.slice();
+  if(!legs.length) return;
+  var per = Math.max(300, Math.round(total/legs.length));
+  nd.wrap.style.transitionDuration = per+"ms";
+  nd.wrap.classList.add("mv");
+  var k = 0;
+  (function step(){
+    if(k >= legs.length){ nd.wrap.classList.remove("mv"); return; }
+    var p = legs[k], dx = p[0]-nd.cur[0], dy = p[1]-nd.cur[1];
+    if(Math.abs(dy) > Math.abs(dx)*1.4 && Math.abs(dy) > 8) nd.bd.style.transform = dy>0?"rotate(70deg)":"rotate(-70deg)";
+    else if(Math.abs(dx) > 8) nd.bd.style.transform = dx<0?"scaleX(-1)":"none";
+    nd.cur = [p[0],p[1]];
+    nd.wrap.style.transform = "translate("+p[0]+"px,"+p[1]+"px)";
+    k++; moveT[i] = setTimeout(step, per);
+  })();
+}
+
+/* ---------- 各面板 ---------- */
+var TXT={}; TXT[W]="待执行"; TXT[A]="进行中"; TXT[D]="已完成";
+var CLS={}; CLS[W]=""; CLS[A]="act"; CLS[D]="done";
+var FILLD={idle:"#24406B",busy:"#1AA085",lock:"#E8A33D",over:"#E2231A",self:"#F4F8FF"};
+
+function renderSim(prev){
+  var s = TL[idx];
+  // 时间轴
+  Array.prototype.forEach.call($("tl").children,function(n,i){
+    n.classList.toggle("act", i===idx); n.classList.toggle("done", i<idx);
+  });
+  $("barF").style.width = (idx/(TL.length-1))*100+"%";
+  $("indNow").textContent = idx+1; $("clk").textContent = s.t;
+  // 车辆
+  VEH.forEach(function(v,i){
+    var k = s.ix[i], nd = vnodes[i];
+    nd.wrap.classList.toggle("foc", i===s.f);
+    if(k < 0){ nd.wrap.classList.add("off"); return; }
+    nd.wrap.classList.remove("off");
+    var st = v.stages[k];
+    var pk = (prev!==undefined && TL[prev].ix[i]!==k);
+    if(pk && !reduce) moveVeh(i, st.path, Math.round(interval*0.55));
+    else { nd.wrap.style.transitionDuration="0ms"; nd.cur=[st.p[0],st.p[1]];
+           nd.wrap.style.transform="translate("+st.p[0]+"px,"+st.p[1]+"px)"; }
+  });
+  // 环节详情
+  $("stNo").textContent = idx+1; $("stEn").textContent = "STEP "+(idx+1)+" · "+s.t;
+  $("stName").textContent = s.n; $("stZone").textContent = s.z; $("kStage").textContent = s.n;
+  $("pts").innerHTML="";
+  s.pts.forEach(function(p,i){
+    var li=document.createElement("li");
+    li.innerHTML='<span class="pk"></span><span class="pt"><b>'+p[0]+'</b>　'+p[1]+'</span>';
+    $("pts").appendChild(li);
+    setTimeout(function(){ li.classList.add("show"); }, reduce?0:150+i*190);
+  });
+  $("sys").innerHTML="";
+  s.sys.forEach(function(x){ var d=document.createElement("span"); d.className="sy"; d.innerHTML=x; $("sys").appendChild(d); });
+  // 车辆列表
+  var vl = $("vlist"); vl.innerHTML=""; var nIn=0,nQ=0,nDone=0,staySum=0,stayN=0;
+  VEH.forEach(function(v,i){
+    var k = s.ix[i];
+    var li = document.createElement("li");
+    li.className = (i===s.f?"foc ":"") + (k<0?"gone":"");
+    var eS = VSPAN[i].e, xS = VSPAN[i].x;
+    var sname, stay="—";
+    if(k<0){ sname="已出园"; }
+    else if(k >= v.enterIdx && k < v.stages.length-1){ sname = v.stages[k].n; }
+    else if(k === v.stages.length-1){ sname = "已出园"; }
+    else { sname = v.stages[k].n; if(v.stages[k].n.indexOf("排队")>=0) nQ++; }
+    if(idx >= eS){
+      var m = mins(TL[Math.min(idx, xS)].t) - mins(TL[eS].t);
+      stay = m + " min"; staySum += m; stayN++;
+      if(idx < xS) nIn++; else nDone++;
+    }
+    li.innerHTML = '<span class="sw" style="background:'+v.color+'"></span>'+
+      '<span class="v1"><span class="pl2">'+v.plate+'</span><span class="bz">'+v.biz+' ｜ '+v.gate+'</span></span>'+
+      '<span class="v2"><span class="sg2">'+sname+'</span><span class="tm">在园 '+stay+'</span></span>';
+    vl.appendChild(li);
+  });
+  $("vMeta").textContent = "在园 "+nIn+" 台 ｜ 排队 "+nQ+" 台 ｜ 已出园 "+nDone+" 台";
+  $("kIn").innerHTML = nIn+'<small>台</small>';
+  $("kQ").innerHTML = nQ+'<small>台</small>';
+  $("kDone").innerHTML = nDone+'<small>台</small>';
+  $("kStay").innerHTML = (stayN?Math.round(staySum/stayN):0)+'<small>min</small>';
+  // 任务流（焦点车）
+  var fv = VEH[s.f], fk = Math.max(0, s.ix[s.f]);
+  $("tfTitle").textContent = "任务流 · "+fv.plate;
+  var ts = fv.task[fk] || fv.task[0];
+  var tf = $("tf"); tf.innerHTML="";
+  fv.tasks.forEach(function(t,i){
+    var st = ts[i] || W, li = document.createElement("li");
+    li.className = CLS[st];
+    li.innerHTML = '<span class="sq">'+(st===D?"✓":(i+1))+'</span><span style="flex:1;min-width:0">'+
+      '<span class="n1">'+t.n+'</span><span class="n2">'+t.d+'</span></span><span class="st">'+TXT[st]+'</span>';
+    tf.appendChild(li);
+  });
+  var dn = ts.filter(function(x){return x===D;}).length;
+  $("tfMeta").textContent = fv.order.split(" ｜ ")[1] + " ｜ " + dn + "/" + fv.tasks.length + " 完成";
+  // 事件
+  if(s.ev){ toast(s.ev[0], s.ev[1], s.ev[2], Math.max(4200, interval-700)); }
+  else $("toast").classList.remove("on");
+  // 月台着色（地图 + 看板）
+  var dd = dockData(idx);
+  var occ=0, tot=0;
+  DGROUPS.forEach(function(gr,gi){
+    dd[gi].forEach(function(c,i){
+      tot++; if(c.s==="busy"||c.s==="over"||c.s==="self") occ++;
+      var nd = dockNodes[gr.k+i];
+      if(nd){
+        nd.r.setAttribute("fill", FILLD[c.s]);
+        nd.r.setAttribute("stroke", c.s==="self"?"#fff":"#2A3F63");
+        nd.r.setAttribute("stroke-width", c.s==="self"?2:1);
+        nd.t.setAttribute("fill", c.s==="self"?"#142642":(c.s==="idle"?"#CFE0F2":"#0A1524"));
+      }
+    });
+  });
+  $("kUse").innerHTML = Math.round(occ/tot*100)+'<small>%</small>';
+  var pH = $("ptH01"), pY = $("ptY01");
+  if(pH){ var on3 = s.ix[2]===4; pH.setAttribute("fill", on3?"#E8A33D":"#24406B"); }
+  if(pY){ var on4 = s.ix[3]===4; pY.setAttribute("fill", on4?"#7B6BD6":"#24406B"); }
+  renderDock(dd);
+  $("prev").disabled = (idx===0);
+}
+
+var toastTimer=null;
+function toast(t,b,ty,ms){
+  clearTimeout(toastTimer);
+  $("toastT").textContent=t; $("toastB").innerHTML=b;
+  $("toast").className = "toast on"+(ty==="ok"?" ok":"");
+  toastTimer = setTimeout(function(){ $("toast").classList.remove("on"); }, ms||5000);
+}
+
+/* ---------- 月台看板 ---------- */
+function renderDock(dd){
+  var occ=0,over=0,lock=0,tot=0,durSum=0,durN=0;
+  dd.forEach(function(gp){ gp.forEach(function(c){ tot++;
+    if(c.s==="busy"||c.s==="self") occ++; if(c.s==="over"){occ++;over++;} if(c.s==="lock") lock++;
+    if(c.du){ durSum+=c.du; durN++; } }); });
+  var sum = [
+    ["月台总数", tot, "#fff"], ["占用中", occ, "#22C4A4"], ["超时占用", over, "#ff7b73"],
+    ["已预锁", lock, "#E8A33D"], ["空闲", tot-occ-lock, "#8AA0BE"],
+    ["平均已用时长", (durN?Math.round(durSum/durN):0)+" min", "#fff"]
+  ];
+  $("dsum").innerHTML = sum.map(function(s){
+    return '<div class="ds"><div class="k">'+s[0]+'</div><div class="v" style="color:'+s[2]+'">'+s[1]+'</div></div>';
+  }).join("");
+  var host = $("dgrid"); host.innerHTML="";
+  DGROUPS.forEach(function(gr,gi){
+    var o=0; dd[gi].forEach(function(c){ if(c.s!=="idle"&&c.s!=="lock") o++; });
+    var box = document.createElement("div"); box.className="dgroup";
+    var cells = dd[gi].map(function(c,i){
+      var lab = c.s==="self"?"本车作业":(c.s==="busy"?"作业中":(c.s==="over"?"超时占用":(c.s==="lock"?"已预锁":"空闲")));
+      return '<div class="dc '+c.s+'"><div class="id">'+gr.k+'-0'+(i+1)+'</div>'+
+        '<div class="st2">'+lab+'</div>'+
+        '<div class="pl3">'+(c.pl||"—")+'</div>'+
+        '<div class="bz2">'+(c.bz||"")+'</div>'+
+        '<div class="du">'+(c.du?("已用 "+c.du+" min"):"—")+'</div>'+
+        '<div class="bp" style="width:'+(c.pg||0)+'%"></div></div>';
+    }).join("");
+    box.innerHTML = '<div class="dgh"><span class="n">'+gr.name+' · '+gr.host+'</span>'+
+      '<span class="s">'+gr.sub+'</span><span class="u">利用率 '+Math.round(o/gr.n*100)+'%</span></div>'+
+      '<div class="dcells">'+cells+'</div>';
+    host.appendChild(box);
+  });
+}
+
+/* ---------- 管理中心看板 ---------- */
+function buildCtl(){
+  // 1. 时段车流曲线
+  var hrs=["06","07","08","09","10","11","12","13","14","15","16","17","18","19","20","21"];
+  var arr=[4,9,18,34,41,36,17,22,31,29,25,19,12,8,5,3];
+  var dep=[2,5,11,21,30,35,26,15,24,28,27,23,16,11,7,4];
+  var w=560,hh=190,pl=34,pb=26,pt=10;
+  var mx=45, sx=(w-pl-10)/(hrs.length-1), sy=(hh-pb-pt)/mx;
+  function pts(a){ return a.map(function(v,i){ return (pl+i*sx).toFixed(1)+","+(hh-pb-v*sy).toFixed(1); }).join(" "); }
+  var s1='<svg viewBox="0 0 '+w+' '+hh+'" >';
+  [0,15,30,45].forEach(function(v){
+    var y=hh-pb-v*sy;
+    s1+='<line x1="'+pl+'" y1="'+y+'" x2="'+(w-6)+'" y2="'+y+'" stroke="#1F3552" stroke-width="1"/>';
+    s1+='<text x="'+(pl-6)+'" y="'+(y+3)+'" fill="#5E7799" font-size="8" text-anchor="end">'+v+'</text>';
+  });
+  s1+='<polygon points="'+pl+','+(hh-pb)+' '+pts(arr)+' '+(pl+(hrs.length-1)*sx)+','+(hh-pb)+'" fill="#E2231A" fill-opacity=".16"/>';
+  s1+='<polyline points="'+pts(arr)+'" fill="none" stroke="#E2231A" stroke-width="2.2"/>';
+  s1+='<polyline points="'+pts(dep)+'" fill="none" stroke="#22C4A4" stroke-width="2.2" stroke-dasharray="6 4"/>';
+  hrs.forEach(function(t,i){ if(i%2===0) s1+='<text x="'+(pl+i*sx)+'" y="'+(hh-8)+'" fill="#5E7799" font-size="8" text-anchor="middle">'+t+'</text>'; });
+  s1+='<rect x="'+(pl+3*sx)+'" y="'+pt+'" width="'+(2*sx)+'" height="'+(hh-pb-pt)+'" fill="#E8A33D" fill-opacity=".07"/>';
+  s1+='<text x="'+(pl+3.1*sx)+'" y="'+(pt+11)+'" fill="#E8A33D" font-size="8.5" font-weight="700">高峰时段</text>';
+  s1+='<circle cx="'+(w-150)+'" cy="14" r="4" fill="#E2231A"/><text x="'+(w-140)+'" y="17" fill="#8AA0BE" font-size="8.5">到场</text>';
+  s1+='<circle cx="'+(w-95)+'" cy="14" r="4" fill="#22C4A4"/><text x="'+(w-85)+'" y="17" fill="#8AA0BE" font-size="8.5">出园</text>';
+  s1+='</svg>';
+  $("chFlow").innerHTML = s1;
+
+  // 2. 三门流量
+  var gates=[{n:"东门",r:"原材料收货",v:118,b:[6,14,26,31,22,19],c:"#E2231A"},
+             {n:"西门",r:"成品发运",v:86,b:[4,9,17,24,26,21],c:"#22C4A4"},
+             {n:"北1门",r:"危废 / 固废 / 特种",v:23,b:[2,3,6,5,4,3],c:"#E8A33D"}];
+  $("chGates").innerHTML = gates.map(function(g){
+    var mxb = Math.max.apply(null,g.b);
+    return '<div class="gt"><div class="gn">'+g.n+'</div><div class="gr">'+g.r+'</div>'+
+      '<div class="gv" style="color:'+g.c+'">'+g.v+'</div><div class="gu">今日车次</div>'+
+      '<div class="gb">'+g.b.map(function(v){ return '<i style="height:'+Math.round(v/mxb*100)+'%;background:'+g.c+';opacity:.75"></i>'; }).join("")+'</div></div>';
+  }).join("");
+
+  // 3. 月台组利用率
+  var du=[["A 组 · M17",78,"#22C4A4"],["B 组 · M15",71,"#22C4A4"],["C 组 · M9",88,"#E8A33D"],["D 组 · M8",64,"#22C4A4"]];
+  $("chDockUse").innerHTML = du.map(function(d){
+    return '<div class="hbr"><span class="nm">'+d[0]+'</span><span class="tr"><i data-w="'+d[1]+'" style="background:'+d[2]+'"></i></span><span class="vl">'+d[1]+'%</span></div>';
+  }).join("");
+
+  // 4. 环节时长构成
+  var segs=[["排队",34,10,"#E2231A"],["入园过磅",12,6,"#E8A33D"],["装卸",41,43,"#22C4A4"],
+            ["转场",18,11,"#7B6BD6"],["出园",18,8,"#3E7AC4"]];
+  var tot0=segs.reduce(function(a,b){return a+b[1];},0), tot1=segs.reduce(function(a,b){return a+b[2];},0);
+  var W2=560,H2=190,left=64,barW=430;
+  var s2='<svg viewBox="0 0 '+W2+' '+H2+'" >';
+  [[0,"试点前基线",tot0,1],[1,"当前（POC）",tot1,2]].forEach(function(row){
+    var y = 34 + row[0]*74, acc=0;
+    s2+='<text x="6" y="'+(y+16)+'" fill="#CFE0F2" font-size="10" font-weight="700">'+row[1]+'</text>';
+    segs.forEach(function(sg){
+      var v = sg[row[3]];
+      var wpx = v/tot0*barW;
+      s2+='<rect x="'+(left+acc)+'" y="'+y+'" width="'+wpx+'" height="26" fill="'+sg[3]+'" fill-opacity=".85"/>';
+      if(wpx>26) s2+='<text x="'+(left+acc+wpx/2)+'" y="'+(y+17)+'" fill="#0A1524" font-size="9" font-weight="700" text-anchor="middle">'+v+'</text>';
+      acc += wpx;
+    });
+    s2+='<text x="'+(left+acc+8)+'" y="'+(y+17)+'" fill="#fff" font-size="11" font-weight="700">合计 '+row[2]+' min</text>';
+  });
+  var lx=left;
+  segs.forEach(function(sg){
+    s2+='<rect x="'+lx+'" y="164" width="9" height="9" rx="2" fill="'+sg[3]+'"/>';
+    s2+='<text x="'+(lx+13)+'" y="172" fill="#8AA0BE" font-size="8.5">'+sg[0]+'</text>';
+    lx += 78;
+  });
+  s2+='</svg>';
+  $("chSeg").innerHTML = s2;
+
+  // 5. 承运商准时率
+  var cr=[["承运商甲",96],["承运商乙",92],["承运商丙",88],["承运商丁",74],["承运商戊",61]];
+  $("chCarrier").innerHTML = cr.map(function(c){
+    var col = c[1]>=90?"#22C4A4":(c[1]>=75?"#E8A33D":"#E2231A");
+    return '<div class="hbr"><span class="nm">'+c[0]+'</span><span class="tr"><i data-w="'+c[1]+'" style="background:'+col+'"></i></span><span class="vl">'+c[1]+'%</span></div>';
+  }).join("");
+
+  // 6. 异常事件
+  var evs=[["10:12","C-01 月台超时占用 32 min","高","已改派至 C-06"],
+           ["09:56","皖A·**7 05 偏离园内路线","中","语音提示已纠正"],
+           ["09:41","皖A·**2 60 晚点 26 min 过号","中","顺延重新叫号"],
+           ["09:20","地磅 2 净重超差 0.8 t","高","转人工复核"],
+           ["08:52","承运商戊 爽约 1 车次","低","计入准时率考核"]];
+  $("chEvt").innerHTML = '<thead><tr><th>时间</th><th>事件</th><th>级别</th><th>处置</th></tr></thead><tbody>'+
+    evs.map(function(e){
+      var c = e[2]==="高"?"h":(e[2]==="中"?"m":"l");
+      return '<tr><td>'+e[0]+'</td><td>'+e[1]+'</td><td><span class="lv '+c+'">'+e[2]+'</span></td><td>'+e[3]+'</td></tr>';
+    }).join("")+'</tbody>';
+}
+function animBars(){
+  Array.prototype.forEach.call(document.querySelectorAll(".hbr .tr i"),function(i){
+    i.style.width = "0%";
+    setTimeout(function(){ i.style.width = i.dataset.w+"%"; }, 60);
+  });
+  Array.prototype.forEach.call(document.querySelectorAll(".dc .bp"),function(b){
+    var w=b.style.width; b.style.width="0%"; setTimeout(function(){ b.style.width=w; },60);
+  });
+}
+
+/* ---------- 时间轴与控制 ---------- */
+function buildTL(){
+  var t = $("tl"); t.innerHTML="";
+  TL.forEach(function(s,i){
+    var d=document.createElement("div"); d.className="tlx";
+    d.innerHTML='<div class="tn">'+s.t+'</div><div class="tt2">'+s.n.split(" · ")[0]+'</div>';
+    d.addEventListener("click",function(){ go(i); pause(); });
+    t.appendChild(d);
+  });
+  $("indAll").textContent = TL.length;
+}
+function go(i){
+  var p = idx;
+  if(i >= TL.length){ idx = TL.length-1; renderSim(p); pause(); return; }
+  idx = Math.max(0, Math.min(TL.length-1, i));
+  renderSim(p);
+}
+function next(){ if(idx >= TL.length-1){ idx=0; renderSim(); } else go(idx+1); }
+function play(){ playing=true; document.body.classList.add("playing"); $("hint").style.display="";
+  $("play").textContent="⏸ 暂停"; clearInterval(timer); timer=setInterval(next, interval); }
+function pause(){ playing=false; document.body.classList.remove("playing"); $("hint").style.display="none";
+  $("play").textContent="▶ 播放"; clearInterval(timer); }
+
+$("play").addEventListener("click",function(){ playing?pause():play(); });
+$("next").addEventListener("click",function(){ next(); pause(); });
+$("prev").addEventListener("click",function(){ go(idx-1); pause(); });
+$("restart").addEventListener("click",function(){ go(0); play(); });
+$("bar").addEventListener("click",function(e){
+  var r=$("bar").getBoundingClientRect();
+  go(Math.round(((e.clientX-r.left)/r.width)*(TL.length-1))); pause();
+});
+Array.prototype.forEach.call(document.querySelectorAll(".speed button"),function(b){
+  b.addEventListener("click",function(){
+    Array.prototype.forEach.call(document.querySelectorAll(".speed button"),function(x){x.classList.remove("on");});
+    b.classList.add("on"); interval=parseInt(b.dataset.s,10); if(playing) play();
+  });
+});
+Array.prototype.forEach.call($("views").querySelectorAll("button"),function(b){
+  b.addEventListener("click",function(){
+    Array.prototype.forEach.call($("views").querySelectorAll("button"),function(x){x.classList.remove("on");});
+    b.classList.add("on");
+    view = b.dataset.v;
+    ["vSim","vDock","vCtl"].forEach(function(v){ $(v).classList.toggle("on", v===view); });
+    if(view!=="vSim") animBars();
+  });
+});
+document.addEventListener("keydown",function(e){
+  if(e.code==="Space"){ e.preventDefault(); playing?pause():play(); }
+  else if(e.code==="ArrowRight"){ next(); pause(); }
+  else if(e.code==="ArrowLeft"){ go(idx-1); pause(); }
+});
+
+/* ---------- 初始化 ---------- */
+buildMap(); buildVeh(); buildTL(); buildCtl(); renderSim();
+if(reduce) pause(); else play();
+})();
+</script>
+</body>
+</html>
